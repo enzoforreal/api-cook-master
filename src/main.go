@@ -1,12 +1,11 @@
 package main
 
 import (
+	"ApiCookMaster/src/handlers"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-
-	"ApiCookMaster/src/handlers"
 )
 
 func main() {
@@ -15,11 +14,13 @@ func main() {
 		fmt.Fprint(w, "Welcome to the Homepage!")
 	})
 
-	router.HandleFunc("/users", handlers.GetUsersHandler).Methods(http.MethodGet)
-	router.HandleFunc("/users/{id}", handlers.GetuserHandler).Methods(http.MethodGet)
-	router.HandleFunc("/users", handlers.CreateUserHandler).Methods(http.MethodPost)
-	router.HandleFunc("/users/{id}", handlers.UpdateUserHandler).Methods(http.MethodPut)
-	router.HandleFunc("/users/{id}", handlers.DeleteUserHandler).Methods(http.MethodDelete)
+	userRepository := handlers.NewUserRepository()         // créer une instance UserRepository
+	userHandler := handlers.NewUserHandler(userRepository) // utilise UserRepository dans UserHandler
+	router.HandleFunc("/users", userHandler.GetUsersHandler).Methods(http.MethodGet)
+	router.HandleFunc("/users/{id}", userHandler.GetuserHandler).Methods(http.MethodGet)
+	router.HandleFunc("/users", userHandler.CreateUserHandler).Methods(http.MethodPost)
+	router.HandleFunc("/users/{id}", userHandler.UpdateUserHandler).Methods(http.MethodPut)
+	router.HandleFunc("/users/{id}", userHandler.DeleteUserHandler).Methods(http.MethodDelete)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

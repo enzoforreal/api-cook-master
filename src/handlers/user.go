@@ -1,37 +1,62 @@
 package handlers
 
 import (
+	"ApiCookMaster/src/models"
 	"encoding/json"
 	"github.com/gorilla/mux"
+
+	//"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
 
-func getUsersFromDB() []User {
-
-	return []User{
-		{ID: 1, Name: "Grelet"},
-		{ID: 2, Name: "Sananes"},
-		{ID: 3, Name: "Bart"},
-		{ID: 4, Name: "Dignat"},
-	}
-}
-
-type User struct {
-	ID   int32  `json:"id"`
-	Name string `json:"name"`
-}
+type User = models.User
 
 var users []User
 
-func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
-	users := getUsersFromDB()
+type UserHandler struct {
+	userRepository UserRepository
+}
 
+func NewUserHandler(repository UserRepository) *UserHandler {
+	return &UserHandler{userRepository: repository}
+}
+
+func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	var user User
+	if r.Method != http.MethodPost {
+		MethodNotAllowedHandler(w, r)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = h.userRepository.InsertUser(user.Nom, user.Prenom, user.Adresse, user.Email, user.Telephone, user.MotDepasse, user.PhotoDeProfil, user.EstAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
+	users, err := h.userRepository.GetAllUsersFromDB()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
 }
 
-func GetuserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) GetuserHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if r.Method != http.MethodGet {
@@ -43,93 +68,62 @@ func GetuserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	users = getUsersFromDB()
-
-	found := false
-	for _, user := range users {
-		if user.ID == int32(id) {
-			json.NewEncoder(w).Encode(user)
-			found = true
-			break
-		}
+	user, err := h.userRepository.GetUserFromDB(int32(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	if !found {
+	if user == nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorMessage := map[string]string{"error": "User not found"}
 		json.NewEncoder(w).Encode(errorMessage)
+	} else {
+		json.NewEncoder(w).Encode(user)
 	}
 }
 
-func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var user User
-
-	_ = json.NewDecoder(r.Body).Decode(&user)
-
-	if r.Method != http.MethodPost {
-		MethodNotAllowedHandler(w, r)
-	}
-
-	users = getUsersFromDB()
-
-	highestID := int32(0)
-	// l'ID utilisateur le plus grand
-	for _, existingUser := range users {
-		if existingUser.ID > highestID {
-			highestID = existingUser.ID
-		}
-	}
-	//Assigne au nouvel utilisateur le prochain ID disponible
-	//pour garantir que chaque utilisateur auront un id unique
-	user.ID = highestID + 1
-
-	users = append(users, user)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
-}
-
-func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if r.Method != http.MethodPut {
 		MethodNotAllowedHandler(w, r)
+		return
 	}
+
 	id, err := strconv.ParseInt(params["id"], 10, 32)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	found := false
-	for i, user := range users {
-		if user.ID == int32(id) {
-			users = append(users[:i], users[i+1:]...)
-
-			var updateUser User
-			err := json.NewDecoder(r.Body).Decode(&updateUser)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			defer r.Body.Close()
-
-			updateUser.ID = int32(id)
-			users = append(users, updateUser)
-			json.NewEncoder(w).Encode(updateUser)
-			found = true
-			return
-		}
+	var user User
+	err = json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
+	defer r.Body.Close()
 
-	if !found {
+	user.ID = int32(id)
+	updatedUser, err := h.userRepository.UpdateUserFromDB(user.ID, user.Nom, user.Prenom, user.Adresse, user.Email, user.Telephone, user.MotDepasse, user.PhotoDeProfil, user.EstAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if updatedUser == nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorMessage := map[string]string{"error": "User not found"}
 		json.NewEncoder(w).Encode(errorMessage)
+		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updatedUser)
 }
 
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if r.Method != http.MethodDelete {
@@ -142,21 +136,11 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found := false
-	for i, user := range users {
-		if user.ID == int32(id) {
-			users = append(users[:i], users[i+1:]...)
-			found = true
-			break
-		}
+	err = h.userRepository.DeleteUserFromDB(int32(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	if found {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(users)
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-		errorMessage := map[string]string{"error": "User not found"}
-		json.NewEncoder(w).Encode(errorMessage)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }

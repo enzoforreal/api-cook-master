@@ -27,14 +27,40 @@ int main() {
     return 1;
   }
 
+  json = get_users_json(); // Mettre à jour la liste des utilisateurs
+  if (!json) {
+    printf("Error getting users\n");
+    return 1;
+  }
+  print_users(json);
+  free(json);
+
   char *update_res = put_user_json(user_id, "Jane Doe");
   printf("%s\n", update_res);
+
+  json = get_users_json(); // Mettre à jour la liste des utilisateurs
+  if (!json) {
+    printf("Error getting users\n");
+    return 1;
+  }
+  print_users(json);
+  free(json);
 
   char *delete_res = delete_user_json(user_id);
   printf("%s\n", delete_res);
 
+  json = get_users_json(); // Mettre à jour la liste des utilisateurs
+  if (!json) {
+    printf("Error getting users\n");
+    return 1;
+  }
+  print_users(json);
+  free(json);
+
   return 0;
 }
+
+
 
 
 
@@ -162,13 +188,13 @@ int post_user_json(const char *name) {
   }
 
   long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    if (http_code != 200) {
-      printf("Error: HTTP status code %ld\n", http_code);
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+  if (http_code != 201) {
+      printf("Error creating user: HTTP status code %ld\n", http_code);
       curl_easy_cleanup(curl);
       free(chunk.memory);
       return -1;
-    }
+  }
 
   cJSON *json_response = cJSON_Parse(chunk.memory);
   if (!json_response) {
@@ -196,6 +222,7 @@ int post_user_json(const char *name) {
 
   return user_id;
 }
+
 
 char *put_user_json(int id, const char *name) {
   CURL *curl;
@@ -233,7 +260,7 @@ char *put_user_json(int id, const char *name) {
     return "Error updating user";
   }
 
-  printf("User updated successfully\n");
+  //printf("User updated successfully\n");
 
   long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
@@ -283,7 +310,7 @@ char *delete_user_json(int id) {
     return "Error deleting user";
   }
 
-  printf("User deleted successfully\n");
+  //printf("User deleted successfully\n");
 
   long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
