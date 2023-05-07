@@ -28,5 +28,9 @@ db:
 restart:
 	$(DOCKER_COMPOSE) restart
 
+deleteDB:
+	docker-compose down --volumes
+
+
 clean:
 	$(DOCKER_COMPOSE) down -v --remove-orphans
