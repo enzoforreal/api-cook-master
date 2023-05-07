@@ -1,0 +1,6 @@
+.env
+.idea
+docker-compose.yml
+go.mod
+go.sum
+Dockerfile

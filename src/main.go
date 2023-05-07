@@ -2,6 +2,7 @@ package main
 
 import (
 	"ApiCookMaster/src/handlers"
+	"ApiCookMaster/src/handlers/db"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
@@ -9,9 +10,11 @@ import (
 )
 
 func main() {
+	// Appel la fonction init() du package db pour charger les variables d'environnement
+	db.Init()
 	router := mux.NewRouter()
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Welcome to the Homepage!")
+		fmt.Fprint(w, "Welcome cookmasters !!")
 	})
 
 	userRepository := handlers.NewUserRepository()         // créer une instance UserRepository

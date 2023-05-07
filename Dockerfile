@@ -1,22 +1,19 @@
-# Utilisez une image de Go comme image de base pour la compilation
-FROM golang:1.20-alpine3.14 AS build
+# Utilise une image de Go spécifique comme image de base pour la compilation
+FROM golang:1.17-alpine3.13 AS build
 
 # Répertoire de travail dans le conteneur
 WORKDIR /app
 
-# Copiez les fichiers du projet dans le conteneur
+# Copie les fichiers du projet dans le conteneur
 COPY . .
 
-# Compilez l'application
-RUN go build -o main
+# Compile l'application
+RUN cd src && go build -o /app/main
 
-# Utilisez une image Alpine Linux comme image de base pour l'exécution
+# Utilise une image Alpine Linux comme image de base pour l'exécution
 FROM alpine:3.14
 
-# Ajoutez le fichier binaire de l'application dans le conteneur
-COPY --from=build /app/main /usr/local/bin/api
-
-# Installez PostgreSQL
+# Installe PostgreSQL
 RUN apk update && \
     apk add postgresql postgresql-client && \
     mkdir /run/postgresql && \
@@ -25,15 +22,27 @@ RUN apk update && \
     echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf && \
     echo "listen_addresses='*'" >> /var/lib/postgresql/data/postgresql.conf
 
-# Démarrez le service PostgreSQL et créez la base de données pour l'API
-RUN su -c "pg_ctl start -D /var/lib/postgresql/data && \
-           psql -U postgres -c 'CREATE DATABASE cookmaster;'" postgres
+# Copie le script de migration dans le conteneur
+COPY ./migrations/001_initial_database.sql /docker-entrypoint-initdb.d/
 
-# Définissez le répertoire de travail par défaut
+# Ajoute le fichier binaire de l'application dans le conteneur
+COPY --from=build /app/main /usr/local/bin/api
+
+# Copie le fichier .env dans le conteneur
+COPY .env /
+
+# Défini le répertoire de travail par défaut
 WORKDIR /usr/local/bin
 
-# Exposez le port de l'API
-EXPOSE 8080
+# Expose le port de l'API
+EXPOSE 8000
 
-# Lancez l'application
+# Défini les variables d'environnement pour l'API
+ENV POSTGRES_HOST=localhost
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=secret
+ENV POSTGRES_DB=cookmaster
+
+# Lance l'application
 CMD ["api"]

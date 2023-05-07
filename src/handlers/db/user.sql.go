@@ -4,16 +4,39 @@ import (
 	"ApiCookMaster/src/models"
 	"database/sql"
 	"fmt"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"os"
 	"strings"
 )
 
 type User = models.User
 
-const dataSourceName = "user=postgres password=secret host=localhost dbname=cookmaster sslmode=disable"
+var dataSourceName string
 
+func Init() {
+	// Charger les variables d'environnement depuis le fichier .env
+	err := godotenv.Load("/.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Récupérer les variables d'environnement pour la connexion à la base de données
+	dbHost := os.Getenv("POSTGRES_HOST")
+	dbPort := os.Getenv("POSTGRES_PORT")
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+
+	// Construire la chaîne de connexion à la base de données
+	dataSourceName = fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		dbUser, dbPassword, dbHost, dbPort, dbName)
+
+}
 func InsertUser(nom, prenom, adresse, email, telephone, mot_de_passe, photo_de_profil string, est_admin bool) error {
-	db, err := sql.Open("postgres", "dataSourceName")
+	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		return fmt.Errorf("Error opening database connection: %w", err)
 	}
@@ -75,7 +98,7 @@ func GetAllUsersFromDB() ([]User, error) {
 }
 
 func GetUserFromDB(id int32) (*User, error) {
-	db, err := sql.Open("postgres", "dataSourceName")
+	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		return nil, fmt.Errorf("Error opening database connection: %w", err)
 	}
@@ -94,7 +117,7 @@ func GetUserFromDB(id int32) (*User, error) {
 }
 
 func UpdateUserFromDB(id int32, nom string, prenom string, adresse string, email string, telephone string, mot_de_passe string, photo_de_profil string, est_admin bool) (*User, error) {
-	db, err := sql.Open("postgres", "dataSourceName")
+	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		return nil, fmt.Errorf("Error opening database connection: %w", err)
 	}
@@ -117,7 +140,8 @@ func UpdateUserFromDB(id int32, nom string, prenom string, adresse string, email
 }
 
 func DeleteUserFromDB(id int32) error {
-	db, err := sql.Open("postgres", "dataSourceName")
+	db, err := sql.Open("postgres", dataSourceName)
+
 	if err != nil {
 		return fmt.Errorf("Error opening database connection: %w", err)
 	}
