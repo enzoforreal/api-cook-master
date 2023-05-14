@@ -1,49 +1,58 @@
-# api-cook-master
-ApiCookMaster
-ApiCookMaster est une API REST permettant de gérer une liste d'utilisateurs. Elle
+# api-cook-master en construction
+Endpoint : /auth/login
 
-Fonctionnalités
-Affichage de la liste des utilisateurs
-Affichage d'un utilisateur spécifique
-Ajout d'un nouvel utilisateur
-Modification d'un utilisateur existant
-Suppression d'un utilisateur existant
-Utilisation
-Prérequis
-Go version 1.16 ou supérieure
-Installation
-Clonez le dépôt GitHub :git clone https://github.com/enzoforreal/ApiCookMaster.git
-Ouvrez un terminal dans le dossier du projet :cd ApiCookMaster
-Exécutez la commande go mod downloadpour télécharger les dépendances du projet.
-Démarrage
-Exécutez la commande go run src/main.gopour démarrer le serveur.
-accéder à l'API à l'adresse http://localhost:8000.
-Points finaux
-L'API contient les endpoints suivants :
+Méthode : POST
+Description : Permet à un utilisateur de s'authentifier.
+Paramètres de requête :
+email : Adresse e-mail de l'utilisateur.
+password : Mot de passe de l'utilisateur.
+Réponse :
+Statut 200 OK : Succès de l'authentification.
+Statut 401 Unauthorized : Échec de l'authentification.
+Corps de la réponse : Utilisateur authentifié au format JSON.
+Endpoint : /register
 
-GET /utilisateurs
-Retourne la liste des utilisateurs.
+Méthode : POST
+Description : Permet à un utilisateur de s'inscrire.
+Paramètres de requête :
+nom : Nom de l'utilisateur.
+prenom : Prénom de l'utilisateur.
+adresse : Adresse de l'utilisateur.
+email : Adresse e-mail de l'utilisateur.
+mot_de_passe : Mot de passe de l'utilisateur.
+telephone : Numéro de téléphone de l'utilisateur.
+Réponse :
+Statut 201 Created : L'utilisateur a été créé avec succès.
+Statut 400 Bad Request : Échec de la création de l'utilisateur en raison de données incorrectes ou manquantes.
+Corps de la réponse : Utilisateur créé au format JSON.
+Endpoint : /users/{id}
 
-OBTENIR /utilisateurs/{id}
-Retourne les informations d'un utilisateur spécifique identifié par l'ID.
+Méthode : GET
+Description : Récupère les informations d'un utilisateur spécifié par son ID.
+Paramètres de requête :
+id : ID de l'utilisateur.
+Réponse :
+Statut 200 OK : Succès de la récupération des informations de l'utilisateur.
+Statut 404 Not Found : L'utilisateur avec l'ID spécifié n'a pas été trouvé.
+Corps de la réponse : Informations de l'utilisateur au format JSON.
+Endpoint : /users/{id}
 
-POST /utilisateurs
-Ajout d'un nouvel utilisateur. Les données JSON doivent être envoyées dans le corps de la requête. Exemple :
+Méthode : PUT
+Description : Met à jour les informations d'un utilisateur spécifié par son ID.
+Paramètres de requête :
+id : ID de l'utilisateur.
+Corps de la requête : Nouvelles informations de l'utilisateur au format JSON.
+Réponse :
+Statut 200 OK : Succès de la mise à jour des informations de l'utilisateur.
+Statut 404 Not Found : L'utilisateur avec l'ID spécifié n'a pas été trouvé.
+Corps de la réponse : Utilisateur mis à jour au format JSON.
+Endpoint : /users/{id}
 
-json
-
-Copier le code
-{
-"name": "John Doe"
-}
-PUT /users/{id}
-Met à jour les informations d'un utilisateur identifié existant par l'ID. Les données JSON doivent être envoyées dans le corps de la requête. Exemple :
-
-json
-
-Copier le code
-{
-"name": "Jane Doe"
-}
-SUPPRIMER /users/{id}
-Supprimer un utilisateur existant identifié par l'ID.
+Méthode : DELETE
+Description : Supprime un utilisateur spécifié par son ID.
+Paramètres de requête :
+id : ID de l'utilisateur.
+Réponse :
+Statut 204 No Content : Succès de la suppression de l'utilisateur.
+Statut 404 Not Found : L'utilisateur avec l'ID spécifié n'a pas été trouvé.
+Ceci est une description générale de l'API Cookmaster en Go
