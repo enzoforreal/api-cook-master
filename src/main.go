@@ -13,8 +13,8 @@ func main() {
 	// Appel la fonction init() du package db pour charger les variables d'environnement
 	db.Init()
 	router := mux.NewRouter()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Welcome cookmasters !!")
+	router.HandleFunc("/home", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "Welcome !")
 	})
 
 	userRepository := handlers.NewUserRepository()         // créer une instance UserRepository

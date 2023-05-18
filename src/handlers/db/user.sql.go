@@ -50,7 +50,7 @@ func InsertUser(nom, prenom, adresse, email, telephone, mot_de_passe, photo_de_p
 	stmt, err := db.Prepare(`
         INSERT INTO users (nom, prenom, adresse, email, telephone, mot_de_passe, photo_de_profil, est_admin, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now())
-        RETURNING id, created_at, updated_at
+        RETURNING id, nom, prenom, adresse, email, telephone, photo_de_profil, est_admin, created_at, updated_at
     `)
 	if err != nil {
 		return fmt.Errorf("Error preparing sql statement: %w", err)
@@ -58,7 +58,7 @@ func InsertUser(nom, prenom, adresse, email, telephone, mot_de_passe, photo_de_p
 
 	var user User
 	err = stmt.QueryRow(nom, prenom, adresse, email, telephone, hashedPassword, photo_de_profil, est_admin).Scan(
-		&user.ID, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Nom, &user.Prenom, &user.Adresse, &user.Email, &user.Telephone, &user.PhotoDeProfil, &user.EstAdmin, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("Error executing sql statement: %w", err)
