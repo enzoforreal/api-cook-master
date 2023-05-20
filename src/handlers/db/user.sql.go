@@ -164,3 +164,23 @@ func DeleteUserFromDB(id int32) error {
 
 	return nil
 }
+
+func GetUserByEmail(email string) (*User, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return nil, fmt.Errorf("Error opening database connection: %w", err)
+	}
+	defer db.Close()
+
+	var user User
+	err = db.QueryRow("SELECT id, nom, prenom, adresse, email, telephone, mot_de_passe, photo_de_profil, est_admin FROM users WHERE email = $1", email).Scan(&user.ID, &user.Nom, &user.Prenom, &user.Adresse, &user.Email, &user.Telephone, &user.MotDepasse, &user.PhotoDeProfil, &user.EstAdmin)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("Error retrieving user from database: %w", err)
+
+	}
+
+	return &user, nil
+}

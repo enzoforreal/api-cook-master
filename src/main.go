@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ApiCookMaster/src/auth"
 	"ApiCookMaster/src/handlers"
 	"ApiCookMaster/src/handlers/db"
 	"fmt"
@@ -12,6 +13,10 @@ import (
 func main() {
 	// Appel la fonction init() du package db pour charger les variables d'environnement
 	db.Init()
+
+	// instance de JWTManager
+	jwtManager := auth.NewJWT()
+
 	router := mux.NewRouter()
 	router.HandleFunc("/home", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Welcome !")
@@ -19,11 +24,19 @@ func main() {
 
 	userRepository := handlers.NewUserRepository()         // créer une instance UserRepository
 	userHandler := handlers.NewUserHandler(userRepository) // utilise UserRepository dans UserHandler
-	router.HandleFunc("/users", userHandler.GetUsersHandler).Methods(http.MethodGet)
-	router.HandleFunc("/users/{id}", userHandler.GetuserHandler).Methods(http.MethodGet)
-	router.HandleFunc("/users", userHandler.CreateUserHandler).Methods(http.MethodPost)
-	router.HandleFunc("/users/{id}", userHandler.UpdateUserHandler).Methods(http.MethodPut)
-	router.HandleFunc("/users/{id}", userHandler.DeleteUserHandler).Methods(http.MethodDelete)
+	userHandler.SetJWTManager(jwtManager)                  // Set JWT Manager to UserHandler
+
+	// Create subrouter for routes requiring JWT authentication
+	authRouter := router.PathPrefix("/").Subrouter()
+	authRouter.Use(auth.MiddlewareJWT(jwtManager))
+	// Add login route
+	authRouter.HandleFunc("/login", userHandler.LoginHandler).Methods(http.MethodPost)
+	// Move your existing routes to the subrouter
+	authRouter.HandleFunc("/users", userHandler.GetUsersHandler).Methods(http.MethodGet)
+	authRouter.HandleFunc("/users/{id}", userHandler.GetuserHandler).Methods(http.MethodGet)
+	authRouter.HandleFunc("/users", userHandler.CreateUserHandler).Methods(http.MethodPost)
+	authRouter.HandleFunc("/users/{id}", userHandler.UpdateUserHandler).Methods(http.MethodPut)
+	authRouter.HandleFunc("/users/{id}", userHandler.DeleteUserHandler).Methods(http.MethodDelete)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

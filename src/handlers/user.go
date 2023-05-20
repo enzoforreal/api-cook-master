@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"ApiCookMaster/src/auth"
 	"ApiCookMaster/src/models"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -14,10 +17,16 @@ var users []User
 
 type UserHandler struct {
 	userRepository UserRepository
+	jwtManager     auth.JWTManager
 }
 
 func NewUserHandler(repository UserRepository) *UserHandler {
 	return &UserHandler{userRepository: repository}
+}
+
+// methode SetJWTManager pour injecter le JWTManager dans UserHandler
+func (j *UserHandler) SetJWTManager(jwtManager auth.JWTManager) {
+	j.jwtManager = jwtManager
 }
 
 func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -141,4 +150,50 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		MethodNotAllowedHandler(w, r)
+		return
+	}
+
+	var credentials struct {
+		Email      string `json:"email"`
+		MotDepasse string `json:"mot_de_passe"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&credentials)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Received login request for email: %s\n", credentials.Email)
+
+	user, err := h.userRepository.GetUserByEmail(credentials.Email)
+	if err != nil {
+		// Handle error here
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if user == nil || bcrypt.CompareHashAndPassword([]byte(user.MotDepasse), []byte(credentials.MotDepasse)) != nil {
+		log.Printf("Invalid email or password for email: %s\n", credentials.Email)
+		w.WriteHeader(http.StatusUnauthorized)
+		errorMessage := map[string]string{"error": "Invalid email or password"}
+		json.NewEncoder(w).Encode(errorMessage)
+		return
+	}
+
+	log.Printf("Successful login for email: %s\n", credentials.Email)
+
+	token, err := h.jwtManager.Generate(*user)
+	if err != nil {
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }

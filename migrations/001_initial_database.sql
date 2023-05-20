@@ -5,7 +5,7 @@ CREATE TABLE users (
     adresse VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     telephone VARCHAR(20) NOT NULL,
-    mot_de_passe VARCHAR(100) NOT NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
     photo_de_profil VARCHAR(100),
     est_admin BOOLEAN NOT NULL CHECK (est_admin IN (true, false)),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -4,3 +4,4 @@ docker-compose.yml
 go.mod
 go.sum
 Dockerfile
+keys/
