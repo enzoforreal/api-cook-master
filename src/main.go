@@ -22,9 +22,10 @@ func main() {
 		fmt.Fprint(w, "Welcome !")
 	})
 
-	userRepository := handlers.NewUserRepository()         // créer une instance UserRepository
-	userHandler := handlers.NewUserHandler(userRepository) // utilise UserRepository dans UserHandler
-	userHandler.SetJWTManager(jwtManager)                  // Set JWT Manager to UserHandler
+	userRepository := handlers.NewUserRepository() // créer une instance UserRepository
+	recipeRepository := db.NewRecipeRepository()
+	userHandler := handlers.NewUserHandler(userRepository, recipeRepository) // utilise UserRepository dans UserHandler
+	userHandler.SetJWTManager(jwtManager)                                    // Set JWT Manager to UserHandler
 
 	// Create subrouter for routes requiring JWT authentication
 	authRouter := router.PathPrefix("/").Subrouter()
@@ -38,5 +39,7 @@ func main() {
 	authRouter.HandleFunc("/users/{id}", userHandler.UpdateUserHandler).Methods(http.MethodPut)
 	authRouter.HandleFunc("/users/{id}", userHandler.DeleteUserHandler).Methods(http.MethodDelete)
 
+	//endpoint pour recuperer les recettes aleatoires
+	authRouter.HandleFunc("/recipes/random", userHandler.GetRecipeHandler).Methods(http.MethodGet)
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

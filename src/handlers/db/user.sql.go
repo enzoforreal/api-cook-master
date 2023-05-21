@@ -15,6 +15,7 @@ import (
 type User = models.User
 
 var dataSourceName string
+var APIKey string
 
 func Init() {
 	// Charger les variables d'environnement depuis le fichier .env
@@ -29,6 +30,9 @@ func Init() {
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
+
+	//recuperer la variable d'nvironnement pour lapi spoonacular
+	APIKey = os.Getenv("SPOONACULAR_API_KEY")
 
 	// Construire la chaîne de connexion à la base de données
 	dataSourceName = fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",

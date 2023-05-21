@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"ApiCookMaster/src/auth"
+	"ApiCookMaster/src/handlers/db"
 	"ApiCookMaster/src/models"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -13,15 +14,17 @@ import (
 
 type User = models.User
 
-var users []User
-
 type UserHandler struct {
-	userRepository UserRepository
-	jwtManager     auth.JWTManager
+	userRepository   UserRepository
+	recipeRepository db.RecipeRepository
+	jwtManager       auth.JWTManager
 }
 
-func NewUserHandler(repository UserRepository) *UserHandler {
-	return &UserHandler{userRepository: repository}
+func NewUserHandler(repository UserRepository, recipeRepository db.RecipeRepository) *UserHandler {
+	return &UserHandler{
+		userRepository:   repository,
+		recipeRepository: recipeRepository,
+	}
 }
 
 // methode SetJWTManager pour injecter le JWTManager dans UserHandler
@@ -54,6 +57,11 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		MethodNotAllowedHandler(w, r)
+	}
+
 	users, err := h.userRepository.GetAllUsersFromDB()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,6 +72,7 @@ func (h *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetuserHandler(w http.ResponseWriter, r *http.Request) {
+
 	params := mux.Vars(r)
 
 	if r.Method != http.MethodGet {
@@ -196,4 +205,26 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func (h *UserHandler) GetRecipeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		MethodNotAllowedHandler(w, r)
+		return
+	}
+
+	// recuperer le param "number" de l'url de la req
+	numberStr := r.URL.Query().Get("number")
+	number, err := strconv.Atoi(numberStr)
+	if err != nil {
+		http.Error(w, "Invalid number parameter", http.StatusBadRequest)
+		return
+	}
+	recipes, err := h.recipeRepository.GetRecipesFromSpoonacular(number)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipes)
 }
